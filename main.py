@@ -1,51 +1,52 @@
 import requests
 from bs4 import BeautifulSoup
-
-#Создаём функцию, которая будет получать информацию
-def get_english_words():
-   url = "https://randomword.com/"
-   try:
-       response = requests.get(url)
-       # Создаём объект Soup
-       soup = BeautifulSoup(response.content, "html.parser")
-       # Получаем слово. text.strip удаляет все пробелы из результата
-       english_words = soup.find("div", id="random_word").text.strip()
-       # Получаем описание слова
-       word_definition = soup.find("div", id="random_word_definition").text.strip()
-       # Чтобы программа возвращала словарь
-       return {
-           "english_words": english_words,
-           "word_definition": word_definition
-       }
-
-   except:
-       print("Произошла ошибка")
+from googletrans import Translator
 
 
+def get_russian_words():
+    url = "https://randomword.com/"
+    translator = Translator()
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        english_word = soup.find("div", id="random_word").text.strip()
+        english_definition = soup.find("div", id="random_word_definition").text.strip()
 
-#Создаём функцию, которая будет делать саму игру
+        russian_word = translator.translate(english_word, src='en', dest='ru').text
+        russian_definition = translator.translate(english_definition, src='en', dest='ru').text
+
+        return {
+            "russian_word": russian_word,
+            "russian_definition": russian_definition
+        }
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
+        return None
+
+
 def word_game():
-   print("Добро пожаловать в игру")
-   while True:
-   #Создаём функцию, чтобы использовать результат функции-словаря
-       word_dict = get_english_words()
-       word = word_dict.get("english_words")
-       word_definition = word_dict.get("word_definition")
+    print("Добро пожаловать в игру угадывания слов!")
+    while True:
+        word_dict = get_russian_words()
+        if word_dict is None:
+            print("Не удалось получить слово. Попробуйте еще раз.")
+            continue
 
+        word = word_dict["russian_word"]
+        word_definition = word_dict["russian_definition"]
 
-#Начинаем игру
-       print(f"Значение слова - {word_definition}")
-       user = input("Что это за слово? ")
-       if user == word:
-           print("Все верно!")
-       else:
-           print(f"Ответ неверный, было загадано это слово - {word}")
+        print(f"\nОпределение слова: {word_definition}")
+        user_guess = input("Какое это слово? ")
 
-#Создаём возможность закончить игру
-       play_again = input("Хотите сыграть еще раз? y/n")
-       if play_again != "y":
-           print("Спасибо за игру!")
-           break
+        if user_guess.lower() == word.lower():
+            print("Верно! Вы угадали слово!")
+        else:
+            print(f"К сожалению, это неверно. Правильное слово: {word}")
+
+        play_again = input("Хотите сыграть еще раз? (да/нет): ")
+        if play_again.lower() != "да":
+            print("Спасибо за игру! До свидания!")
+            break
 
 
 word_game()
